@@ -39,7 +39,7 @@ async function callClaude(apiKey, system, userPrompt) {
 
 export async function onRequestPost({ request, env }) {
   try {
-    const { prompt, band } = await request.json();
+    const { prompt, band, counselor } = await request.json();
 
     if (!prompt || typeof prompt !== "string" || !prompt.trim()) {
       return json({ error: "Enter a prompt to compare." }, 400);
@@ -61,29 +61,27 @@ export async function onRequestPost({ request, env }) {
 
     // Routing check runs on the *input*, before generation, in code.
     const tier = detectRouting(prompt);
-    const routed = routingResponse(tier, prompt);
+    const routed = routingResponse(tier, prompt, counselor);
 
     // Always show the unfiltered response (left column).
     const unfiltered = await callClaude(env.ANTHROPIC_API_KEY, null, prompt);
 
-    // Right column: if routing triggered, the framework response replaces
-    // generation (acute = stop). Otherwise, band-conditioned generation + gate.
-    let conditionedRaw = "";
+    // Right column. When routing fires (gray OR acute), the framework response
+    // REPLACES band-conditioned generation entirely — there is no model answer
+    // to leak parasocial language, and no task to "return" to. Only when no
+    // routing tier triggers does the system generate a band-conditioned answer
+    // and pass it through the communication gate.
     let gate = { text: "", removed: [] };
 
-    if (tier === "acute") {
+    if (tier === "acute" || tier === "gray") {
       gate = { text: routed, removed: [] };
     } else {
-      conditionedRaw = await callClaude(
+      const conditionedRaw = await callClaude(
         env.ANTHROPIC_API_KEY,
         def.systemPrompt,
         prompt
       );
       gate = applyGate(conditionedRaw);
-      if (tier === "gray") {
-        // gray-zone: append the reflect-route-return note after the answer
-        gate.text = `${gate.text}\n\n${routed}`;
-      }
     }
 
     return json({

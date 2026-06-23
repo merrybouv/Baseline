@@ -6,14 +6,14 @@
 <title>Baseline — a developmental framework for AI responses</title>
 <style>
   :root{
-    --ink:#16181d;        /* near-black text */
-    --ink-2:#43474f;      /* secondary text */
-    --ink-3:#767b85;      /* muted / captions */
-    --line:#e3e5e9;       /* hairlines */
-    --line-2:#d2d5db;     /* stronger lines */
+    --ink:#16181d;
+    --ink-2:#43474f;
+    --ink-3:#767b85;
+    --line:#e3e5e9;
+    --line-2:#d2d5db;
     --bg:#ffffff;
-    --panel:#fafbfc;      /* faint panel fill */
-    --annot:#f2f3f5;      /* show-its-work fill */
+    --panel:#fafbfc;
+    --annot:#f2f3f5;
     --max:1040px;
     --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --mono: "SFMono-Regular", ui-monospace, "Menlo", "Consolas", monospace;
@@ -24,13 +24,13 @@
   a{color:var(--ink);text-underline-offset:2px}
   .wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
 
-  /* ── header ── */
-  header{border-bottom:1px solid var(--line);padding:40px 0 28px}
-  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.08em;
-    text-transform:uppercase;color:var(--ink-3);margin:0 0 10px}
-  h1{font-size:30px;line-height:1.15;font-weight:650;letter-spacing:-0.01em;margin:0 0 8px}
-  h1 .wt{color:var(--ink-3);font-weight:400}
-  .sub{color:var(--ink-2);font-size:15.5px;max-width:64ch;margin:0}
+  /* ── header / hero ── */
+  header{border-bottom:1px solid var(--line);padding:64px 0 48px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink-3);margin:0 0 20px}
+  h1{font-size:76px;line-height:.96;font-weight:680;letter-spacing:-0.03em;margin:0 0 18px}
+  .lede{font-size:21px;line-height:1.35;color:var(--ink-2);font-weight:450;max-width:30ch;margin:0 0 26px}
+  .explain{color:var(--ink-3);font-size:14.5px;max-width:62ch;margin:0;line-height:1.55}
 
   /* ── consent gate ── */
   .gate-overlay{position:fixed;inset:0;background:rgba(255,255,255,.97);
@@ -45,15 +45,32 @@
   .btn{background:var(--ink);color:#fff;border:1px solid var(--ink);
     padding:10px 18px;font-weight:550}
   .btn:hover{background:#000}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
   .btn-ghost{background:transparent;color:var(--ink-2);border:1px solid var(--line-2);
     padding:10px 18px}
   .btn-ghost:hover{color:var(--ink);border-color:var(--ink-3)}
 
+  /* ── institutional context card ── */
+  .context{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:30px;
+    border:1px solid var(--line)}
+  .ctx-cell{padding:18px 20px}
+  .ctx-cell.left{border-right:1px solid var(--line)}
+  .ctx-label{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ink-3);margin:0 0 12px}
+  .ctx-field{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .ctx-field label{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);
+    width:130px;flex-shrink:0}
+  .ctx-field input{flex:1;border:1px solid var(--line-2);background:var(--bg);
+    padding:6px 9px;font-family:var(--sans);font-size:13.5px;color:var(--ink);outline:none}
+  .ctx-field input:focus{border-color:var(--ink-3)}
+  .ctx-note{font-size:12.5px;color:var(--ink-2);line-height:1.5;margin:0}
+  .ctx-note strong{color:var(--ink)}
+
   /* ── controls ── */
-  .controls{padding:28px 0 8px}
+  .controls{padding:30px 0 8px}
   label.fld{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.07em;
     text-transform:uppercase;color:var(--ink-3);margin:0 0 8px}
-  textarea{width:100%;min-height:88px;resize:vertical;padding:14px;font-family:var(--sans);
+  textarea{width:100%;min-height:84px;resize:vertical;padding:14px;font-family:var(--sans);
     font-size:15px;line-height:1.5;color:var(--ink);background:var(--bg);
     border:1px solid var(--line-2);outline:none}
   textarea:focus{border-color:var(--ink-3)}
@@ -63,8 +80,8 @@
     padding:9px 14px;font-family:var(--mono);font-size:13px}
   .band-btn[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
   .band-btn:hover{border-color:var(--ink-3)}
-  .spacer{flex:1}
   .run{margin-left:auto}
+  .quota{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);margin-top:10px}
 
   /* ── comparison ── */
   .compare{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:30px;
@@ -75,12 +92,9 @@
     text-transform:uppercase;color:var(--ink-3);margin:0 0 4px}
   .col-sub{font-size:12.5px;color:var(--ink-3);margin:0 0 16px}
   .response{font-size:15px;line-height:1.6;color:var(--ink);white-space:pre-wrap}
-  .response.empty{color:var(--ink-3)}
 
-  /* show-its-work panel — the one annotated element */
-  .work{border-top:1px solid var(--line);background:var(--annot);
-    padding:16px 22px 18px;font-size:13px;color:var(--ink-2)}
   .work-grid{border:1px solid var(--line);border-top:none}
+  .work{background:var(--annot);padding:16px 22px 18px;font-size:13px;color:var(--ink-2)}
   .work h4{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
     color:var(--ink-3);margin:0 0 10px;font-weight:600}
   .work dl{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;margin:0}
@@ -91,7 +105,6 @@
   .tier-acute{color:#000;font-weight:600}
   .tier-gray{color:var(--ink)}
 
-  /* refusal state */
   .refusal{border:1px solid var(--line-2);background:var(--panel);padding:26px;
     margin-top:30px;font-size:15.5px;line-height:1.6;color:var(--ink)}
   .refusal .tag{font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;
@@ -99,6 +112,9 @@
 
   .err{margin-top:20px;border:1px solid var(--line-2);padding:14px 18px;font-size:14px;color:var(--ink)}
   .loading{font-family:var(--mono);font-size:13px;color:var(--ink-3);margin-top:24px}
+  .limit{margin-top:24px;border:1px solid var(--line-2);background:var(--panel);
+    padding:20px 22px;font-size:14px;color:var(--ink-2);line-height:1.55}
+  .limit a{font-weight:550}
 
   /* ── literature ── */
   details.lit{margin-top:48px;border-top:1px solid var(--line);padding-top:22px}
@@ -106,7 +122,7 @@
     letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);list-style:none}
   details.lit > summary::-webkit-details-marker{display:none}
   details.lit > summary::before{content:"+ ";color:var(--ink-3)}
-  details.lit[open] > summary::before{content:"– "}
+  details.lit[open] > summary::before{content:"\2013 "}
   .lit-body{margin-top:20px}
   .lit-group{margin-bottom:22px}
   .lit-group h3{font-size:13px;font-weight:650;margin:0 0 8px}
@@ -119,11 +135,13 @@
   footer{margin:56px 0 40px;padding-top:22px;border-top:1px solid var(--line);
     font-size:12.5px;color:var(--ink-3);line-height:1.6}
   footer .disc{max-width:70ch}
+  footer a{color:var(--ink-2)}
 
   @media (max-width:720px){
-    .compare{grid-template-columns:1fr}
-    .col.left{border-right:none;border-bottom:1px solid var(--line)}
-    h1{font-size:25px}
+    h1{font-size:52px}
+    .lede{font-size:18px}
+    .compare,.context{grid-template-columns:1fr}
+    .col.left,.ctx-cell.left{border-right:none;border-bottom:1px solid var(--line)}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -152,14 +170,42 @@
 <header>
   <div class="wrap">
     <p class="kicker">Baseline · working title</p>
-    <h1>A developmental framework for AI responses <span class="wt">to people under 18</span></h1>
-    <p class="sub">Type a prompt. The left shows a general AI response. The right shows
-       the same prompt conditioned on a declared developmental band, with the framework's
-       decisions made visible. Band is declared, never inferred.</p>
+    <h1>Baseline</h1>
+    <p class="lede">A developmental framework for minors interacting with AI.</p>
+    <p class="explain">Type a prompt. The left shows a general AI response; the right
+       shows the same prompt conditioned on a declared developmental band, with the
+       framework's decisions made visible. Band is declared, never inferred.</p>
   </div>
 </header>
 
 <main class="wrap" id="app" hidden>
+
+  <!-- institutional context card -->
+  <section class="context">
+    <div class="ctx-cell left">
+      <p class="ctx-label">Institutional context · School A</p>
+      <div class="ctx-field">
+        <label for="counselor">Guidance counselor</label>
+        <input id="counselor" type="text" value="Mrs. Jane" />
+      </div>
+      <div class="ctx-field">
+        <label for="teacher">Homeroom teacher</label>
+        <input id="teacher" type="text" value="Mr. Doe" />
+      </div>
+    </div>
+    <div class="ctx-cell">
+      <p class="ctx-label">How this works in a school</p>
+      <p class="ctx-note">In institutional deployment, the school configures who a
+        student is routed to. Conversations are part of the <strong>learning record
+        and visible to the school</strong>; they are not a private channel. This is by
+        design — the tool is openly a learning instrument, never a confidant.</p>
+      <p class="ctx-note" style="margin-top:10px">Serious disclosures route to the
+        school's safeguarding lead. <strong>What that escalation does</strong> — and
+        whether older minors see additional resources — is the institution's policy to
+        set, not the framework's.</p>
+    </div>
+  </section>
+
   <section class="controls">
     <label class="fld" for="prompt">Prompt</label>
     <textarea id="prompt" placeholder="e.g. Explain what a black hole is. — or — I'm dumb, I'll never get this math."></textarea>
@@ -171,6 +217,7 @@
       </div>
       <button class="btn run" id="run">Compare responses</button>
     </div>
+    <p class="quota" id="quota"></p>
   </section>
 
   <div id="output"></div>
@@ -233,7 +280,8 @@
        form moves the safety-critical decisions into auditable code rather than the model.
        No warranty. Not for real-world deployment, not for use by children, not professional
        advice. No data is collected or retained.</p>
-    <p style="margin-top:10px">A research demonstration from NET Lab.</p>
+    <p style="margin-top:10px">A research demonstration from NET Lab ·
+       <a href="https://github.com/merrybouv/Baseline" target="_blank" rel="noopener">source on GitHub</a></p>
   </footer>
 </main>
 
@@ -246,12 +294,16 @@ const BANDS = [
   { id:"b16_17", label:"16–17" },
 ];
 let band = "b10_12";
+const LIMIT = 5;
+let used = 0;
+
+const REPO = "https://github.com/merrybouv/Baseline";
 
 // consent
 const gate = document.getElementById("gate");
 const app = document.getElementById("app");
 document.getElementById("agree").addEventListener("click", ()=>{
-  gate.remove(); app.hidden = false; document.getElementById("prompt").focus();
+  gate.remove(); app.hidden = false; updateQuota(); document.getElementById("prompt").focus();
 });
 
 // band buttons
@@ -269,12 +321,20 @@ function renderBands(){
 }
 renderBands();
 
+const runBtn = document.getElementById("run");
+const quotaEl = document.getElementById("quota");
+function updateQuota(){
+  const left = LIMIT - used;
+  quotaEl.textContent = `${left} of ${LIMIT} demo comparisons remaining.`;
+  if(left <= 0){ runBtn.disabled = true; }
+}
+
 // suggestion mailto
 const suggest = document.getElementById("suggest");
 const suggestlink = document.getElementById("suggestlink");
-suggestlink.addEventListener("click", (e)=>{
+suggestlink.addEventListener("click", ()=>{
   const body = encodeURIComponent(suggest.value || "");
-  suggestlink.href = `mailto:hello@example.org?subject=${encodeURIComponent("Baseline — literature suggestion")}&body=${body}`;
+  suggestlink.href = `mailto:merrybouv@proton.me?subject=${encodeURIComponent("Baseline — literature suggestion")}&body=${body}`;
 });
 
 const out = document.getElementById("output");
@@ -284,12 +344,18 @@ function renderRefusal(refusal){
   out.innerHTML = `<div class="refusal"><span class="tag">Band: Under 6 · not supported</span>${esc(refusal)}</div>`;
 }
 
+function renderLimit(){
+  out.innerHTML = `<div class="limit">You've reached the demo limit (${LIMIT} comparisons).
+    This is a cost-limited research demonstration. The full framework and source are on
+    <a href="${REPO}" target="_blank" rel="noopener">GitHub</a>.</div>`;
+}
+
 function renderResult(d){
   const b = d.band;
   const tier = d.routing?.tier || "none";
   const removed = d.gate?.removed || [];
   const tierLabel = tier==="acute" ? `<span class="tier-acute">acute → reflect · route · stop</span>`
-    : tier==="gray" ? `<span class="tier-gray">gray zone → reflect · route · return</span>`
+    : tier==="gray" ? `<span class="tier-gray">gray zone → reflect · route</span>`
     : "not triggered";
   const chips = removed.length
     ? removed.map(r=>`<span class="chip">${esc(r.phrase.slice(0,42))}${r.phrase.length>42?"…":""}</span>`).join("")
@@ -319,22 +385,23 @@ function renderResult(d){
     </div></div>`;
 }
 
-document.getElementById("run").addEventListener("click", async ()=>{
+runBtn.addEventListener("click", async ()=>{
+  if(used >= LIMIT){ renderLimit(); return; }
   const prompt = document.getElementById("prompt").value.trim();
   if(!prompt){ out.innerHTML = `<div class="err">Enter a prompt to compare.</div>`; return; }
-  if(band==="under6"){
-    // refusal is enacted client-side too, but we let the server be source of truth
-  }
+  const counselor = document.getElementById("counselor").value.trim();
+
   out.innerHTML = `<p class="loading">Generating both responses…</p>`;
   try{
     const r = await fetch("/api/respond", {
       method:"POST", headers:{"content-type":"application/json"},
-      body: JSON.stringify({ prompt, band })
+      body: JSON.stringify({ prompt, band, counselor })
     });
     const d = await r.json();
     if(d.error){ out.innerHTML = `<div class="err">${esc(d.error)}</div>`; return; }
-    if(d.refusal){ renderRefusal(d.refusal); return; }
+    if(d.refusal){ renderRefusal(d.refusal); used++; updateQuota(); return; }
     renderResult(d);
+    used++; updateQuota();
   }catch(err){
     out.innerHTML = `<div class="err">Something went wrong: ${esc(String(err))}</div>`;
   }

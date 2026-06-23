@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Baseline — a developmental framework for AI responses</title>
+<style>
+  :root{
+    --ink:#16181d;        /* near-black text */
+    --ink-2:#43474f;      /* secondary text */
+    --ink-3:#767b85;      /* muted / captions */
+    --line:#e3e5e9;       /* hairlines */
+    --line-2:#d2d5db;     /* stronger lines */
+    --bg:#ffffff;
+    --panel:#fafbfc;      /* faint panel fill */
+    --annot:#f2f3f5;      /* show-its-work fill */
+    --max:1040px;
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: "SFMono-Regular", ui-monospace, "Menlo", "Consolas", monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  a{color:var(--ink);text-underline-offset:2px}
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+
+  /* ── header ── */
+  header{border-bottom:1px solid var(--line);padding:40px 0 28px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--ink-3);margin:0 0 10px}
+  h1{font-size:30px;line-height:1.15;font-weight:650;letter-spacing:-0.01em;margin:0 0 8px}
+  h1 .wt{color:var(--ink-3);font-weight:400}
+  .sub{color:var(--ink-2);font-size:15.5px;max-width:64ch;margin:0}
+
+  /* ── consent gate ── */
+  .gate-overlay{position:fixed;inset:0;background:rgba(255,255,255,.97);
+    display:flex;align-items:center;justify-content:center;padding:24px;z-index:50}
+  .gate-card{max-width:520px;border:1px solid var(--line-2);padding:32px}
+  .gate-card h2{font-size:18px;margin:0 0 14px;font-weight:650}
+  .gate-card p{color:var(--ink-2);font-size:14.5px;margin:0 0 14px}
+  .gate-card .note{font-family:var(--mono);font-size:12px;color:var(--ink-3);
+    border-top:1px solid var(--line);padding-top:14px;margin-top:6px}
+  .gate-actions{display:flex;gap:10px;margin-top:20px}
+  button{font-family:var(--sans);font-size:14px;cursor:pointer}
+  .btn{background:var(--ink);color:#fff;border:1px solid var(--ink);
+    padding:10px 18px;font-weight:550}
+  .btn:hover{background:#000}
+  .btn-ghost{background:transparent;color:var(--ink-2);border:1px solid var(--line-2);
+    padding:10px 18px}
+  .btn-ghost:hover{color:var(--ink);border-color:var(--ink-3)}
+
+  /* ── controls ── */
+  .controls{padding:28px 0 8px}
+  label.fld{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.07em;
+    text-transform:uppercase;color:var(--ink-3);margin:0 0 8px}
+  textarea{width:100%;min-height:88px;resize:vertical;padding:14px;font-family:var(--sans);
+    font-size:15px;line-height:1.5;color:var(--ink);background:var(--bg);
+    border:1px solid var(--line-2);outline:none}
+  textarea:focus{border-color:var(--ink-3)}
+  .row{display:flex;gap:16px;align-items:flex-end;margin-top:16px;flex-wrap:wrap}
+  .bands{display:flex;gap:6px;flex-wrap:wrap}
+  .band-btn{border:1px solid var(--line-2);background:var(--bg);color:var(--ink-2);
+    padding:9px 14px;font-family:var(--mono);font-size:13px}
+  .band-btn[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .band-btn:hover{border-color:var(--ink-3)}
+  .spacer{flex:1}
+  .run{margin-left:auto}
+
+  /* ── comparison ── */
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:30px;
+    border:1px solid var(--line);border-bottom:none}
+  .col{padding:22px 22px 26px;min-height:120px}
+  .col.left{border-right:1px solid var(--line)}
+  .col-head{font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--ink-3);margin:0 0 4px}
+  .col-sub{font-size:12.5px;color:var(--ink-3);margin:0 0 16px}
+  .response{font-size:15px;line-height:1.6;color:var(--ink);white-space:pre-wrap}
+  .response.empty{color:var(--ink-3)}
+
+  /* show-its-work panel — the one annotated element */
+  .work{border-top:1px solid var(--line);background:var(--annot);
+    padding:16px 22px 18px;font-size:13px;color:var(--ink-2)}
+  .work-grid{border:1px solid var(--line);border-top:none}
+  .work h4{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--ink-3);margin:0 0 10px;font-weight:600}
+  .work dl{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;margin:0}
+  .work dt{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);white-space:nowrap}
+  .work dd{margin:0;font-size:13px;color:var(--ink-2)}
+  .chip{display:inline-block;font-family:var(--mono);font-size:11px;color:var(--ink-2);
+    border:1px solid var(--line-2);padding:1px 6px;margin:2px 4px 2px 0}
+  .tier-acute{color:#000;font-weight:600}
+  .tier-gray{color:var(--ink)}
+
+  /* refusal state */
+  .refusal{border:1px solid var(--line-2);background:var(--panel);padding:26px;
+    margin-top:30px;font-size:15.5px;line-height:1.6;color:var(--ink)}
+  .refusal .tag{font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--ink-3);display:block;margin-bottom:10px}
+
+  .err{margin-top:20px;border:1px solid var(--line-2);padding:14px 18px;font-size:14px;color:var(--ink)}
+  .loading{font-family:var(--mono);font-size:13px;color:var(--ink-3);margin-top:24px}
+
+  /* ── literature ── */
+  details.lit{margin-top:48px;border-top:1px solid var(--line);padding-top:22px}
+  details.lit > summary{cursor:pointer;font-family:var(--mono);font-size:12px;
+    letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);list-style:none}
+  details.lit > summary::-webkit-details-marker{display:none}
+  details.lit > summary::before{content:"+ ";color:var(--ink-3)}
+  details.lit[open] > summary::before{content:"– "}
+  .lit-body{margin-top:20px}
+  .lit-group{margin-bottom:22px}
+  .lit-group h3{font-size:13px;font-weight:650;margin:0 0 8px}
+  .lit-group ul{margin:0;padding-left:18px}
+  .lit-group li{font-size:13.5px;color:var(--ink-2);margin-bottom:5px;line-height:1.5}
+  .miss{margin-top:10px;border:1px solid var(--line);background:var(--panel);padding:18px}
+  .miss p{margin:0 0 10px;font-size:13.5px;color:var(--ink-2)}
+  .miss textarea{min-height:60px}
+
+  footer{margin:56px 0 40px;padding-top:22px;border-top:1px solid var(--line);
+    font-size:12.5px;color:var(--ink-3);line-height:1.6}
+  footer .disc{max-width:70ch}
+
+  @media (max-width:720px){
+    .compare{grid-template-columns:1fr}
+    .col.left{border-right:none;border-bottom:1px solid var(--line)}
+    h1{font-size:25px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- consent gate -->
+<div class="gate-overlay" id="gate">
+  <div class="gate-card">
+    <h2>Before you continue</h2>
+    <p>This is a research demonstration for adults. It shows, side by side, how a
+       general AI response differs from one conditioned on a declared developmental
+       stage. It is not a product, and it is not for children to use.</p>
+    <p>By continuing you confirm you are <strong>18 or older</strong> and understand
+       this is an illustrative demonstration of why AI products and EdTech used by
+       people under 18 need a framework like this.</p>
+    <div class="gate-actions">
+      <button class="btn" id="agree">I'm 18+ and I understand</button>
+      <button class="btn-ghost" onclick="location.href='https://www.google.com'">Leave</button>
+    </div>
+    <p class="note">No prompts are stored. This demonstration does not log or retain
+       what you type.</p>
+  </div>
+</div>
+
+<header>
+  <div class="wrap">
+    <p class="kicker">Baseline · working title</p>
+    <h1>A developmental framework for AI responses <span class="wt">to people under 18</span></h1>
+    <p class="sub">Type a prompt. The left shows a general AI response. The right shows
+       the same prompt conditioned on a declared developmental band, with the framework's
+       decisions made visible. Band is declared, never inferred.</p>
+  </div>
+</header>
+
+<main class="wrap" id="app" hidden>
+  <section class="controls">
+    <label class="fld" for="prompt">Prompt</label>
+    <textarea id="prompt" placeholder="e.g. Explain what a black hole is. — or — I'm dumb, I'll never get this math."></textarea>
+
+    <div class="row">
+      <div>
+        <label class="fld">Declared developmental band</label>
+        <div class="bands" id="bands" role="group" aria-label="Developmental band"></div>
+      </div>
+      <button class="btn run" id="run">Compare responses</button>
+    </div>
+  </section>
+
+  <div id="output"></div>
+
+  <!-- literature -->
+  <details class="lit">
+    <summary>Literature this framework is grounded in</summary>
+    <div class="lit-body">
+      <div class="lit-group">
+        <h3>Developmental capacity</h3>
+        <ul>
+          <li>ICO Age Appropriate Design Code, Annex B (age/developmental stages).</li>
+          <li>Common Sense Media, per-age content guidance.</li>
+          <li>Piaget, J. (1952). Concrete vs. formal operational stages.</li>
+          <li>American Academy of Pediatrics, media guidance.</li>
+        </ul>
+      </div>
+      <div class="lit-group">
+        <h3>Theory of mind &amp; anthropomorphism</h3>
+        <ul>
+          <li>Kurian, N. (2025). Developmentally aligned AI. <em>AI, Brain and Child</em>.</li>
+          <li>Kurian, N. (2025). Relational drift and developmental vulnerability (preprint).</li>
+          <li>Goldman et al. (2025); Hoffman et al. (2021); attachment work (Bowlby; Ainsworth).</li>
+        </ul>
+      </div>
+      <div class="lit-group">
+        <h3>Content-harm gating</h3>
+        <ul>
+          <li>Ofcom, Protection of Children Codes / Online Safety Act — primary-priority content.</li>
+          <li>COPPA — the under-13 line and the 13–17 "teen gap."</li>
+        </ul>
+      </div>
+      <div class="lit-group">
+        <h3>Reading level / complexity</h3>
+        <ul>
+          <li>Flesch-Kincaid grade level; Lexile; Common Core text-complexity bands.</li>
+        </ul>
+      </div>
+      <div class="lit-group">
+        <h3>Routing / talking about harm</h3>
+        <ul>
+          <li>NCMEC / NetSmartz; NSPCC; Thorn; Australia's eSafety Commissioner.</li>
+        </ul>
+      </div>
+
+      <div class="miss">
+        <p><strong>Have we missed something?</strong> This list is maintained and added to
+           over time. Suggest a source or a gap.</p>
+        <textarea id="suggest" placeholder="A citation, a dimension, or a gap we've overlooked…"></textarea>
+        <div style="margin-top:10px">
+          <a class="btn" id="suggestlink" href="#" style="text-decoration:none;display:inline-block">Email this suggestion</a>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <footer>
+    <p class="disc"><strong>Illustrative research demonstration. Non-production.</strong>
+       The band-conditioning shown here is prompt-based (v1); the framework's production
+       form moves the safety-critical decisions into auditable code rather than the model.
+       No warranty. Not for real-world deployment, not for use by children, not professional
+       advice. No data is collected or retained.</p>
+    <p style="margin-top:10px">A research demonstration from NET Lab.</p>
+  </footer>
+</main>
+
+<script type="module">
+const BANDS = [
+  { id:"under6", label:"Under 6" },
+  { id:"b6_8",   label:"6–8" },
+  { id:"b10_12", label:"10–12" },
+  { id:"b13_15", label:"13–15" },
+  { id:"b16_17", label:"16–17" },
+];
+let band = "b10_12";
+
+// consent
+const gate = document.getElementById("gate");
+const app = document.getElementById("app");
+document.getElementById("agree").addEventListener("click", ()=>{
+  gate.remove(); app.hidden = false; document.getElementById("prompt").focus();
+});
+
+// band buttons
+const bandsEl = document.getElementById("bands");
+function renderBands(){
+  bandsEl.innerHTML = "";
+  for(const b of BANDS){
+    const btn = document.createElement("button");
+    btn.className = "band-btn";
+    btn.textContent = b.label;
+    btn.setAttribute("aria-pressed", String(b.id===band));
+    btn.addEventListener("click", ()=>{ band = b.id; renderBands(); });
+    bandsEl.appendChild(btn);
+  }
+}
+renderBands();
+
+// suggestion mailto
+const suggest = document.getElementById("suggest");
+const suggestlink = document.getElementById("suggestlink");
+suggestlink.addEventListener("click", (e)=>{
+  const body = encodeURIComponent(suggest.value || "");
+  suggestlink.href = `mailto:hello@example.org?subject=${encodeURIComponent("Baseline — literature suggestion")}&body=${body}`;
+});
+
+const out = document.getElementById("output");
+const esc = (s)=> s.replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+function renderRefusal(refusal){
+  out.innerHTML = `<div class="refusal"><span class="tag">Band: Under 6 · not supported</span>${esc(refusal)}</div>`;
+}
+
+function renderResult(d){
+  const b = d.band;
+  const tier = d.routing?.tier || "none";
+  const removed = d.gate?.removed || [];
+  const tierLabel = tier==="acute" ? `<span class="tier-acute">acute → reflect · route · stop</span>`
+    : tier==="gray" ? `<span class="tier-gray">gray zone → reflect · route · return</span>`
+    : "not triggered";
+  const chips = removed.length
+    ? removed.map(r=>`<span class="chip">${esc(r.phrase.slice(0,42))}${r.phrase.length>42?"…":""}</span>`).join("")
+    : `<span style="color:var(--ink-3)">none</span>`;
+
+  out.innerHTML = `
+    <div class="compare">
+      <div class="col left">
+        <p class="col-head">Unfiltered</p>
+        <p class="col-sub">General response · no developmental conditioning</p>
+        <div class="response">${esc(d.unfiltered||"")}</div>
+      </div>
+      <div class="col right">
+        <p class="col-head">Conditioned · band ${esc(b.label)}</p>
+        <p class="col-sub">${esc(b.stage||"")}</p>
+        <div class="response">${esc(d.conditioned||"")}</div>
+      </div>
+    </div>
+    <div class="work-grid"><div class="work">
+      <h4>What the framework did</h4>
+      <dl>
+        <dt>Band</dt><dd>${esc(b.label)} · reading level ${esc(b.readingLevel||"—")}</dd>
+        <dt>Comm. gate</dt><dd>removed ${removed.length} phrase${removed.length===1?"":"s"} &nbsp; ${chips}</dd>
+        <dt>Routing</dt><dd>${tierLabel}</dd>
+        ${b.note?`<dt>Note</dt><dd>${esc(b.note)}</dd>`:""}
+      </dl>
+    </div></div>`;
+}
+
+document.getElementById("run").addEventListener("click", async ()=>{
+  const prompt = document.getElementById("prompt").value.trim();
+  if(!prompt){ out.innerHTML = `<div class="err">Enter a prompt to compare.</div>`; return; }
+  if(band==="under6"){
+    // refusal is enacted client-side too, but we let the server be source of truth
+  }
+  out.innerHTML = `<p class="loading">Generating both responses…</p>`;
+  try{
+    const r = await fetch("/api/respond", {
+      method:"POST", headers:{"content-type":"application/json"},
+      body: JSON.stringify({ prompt, band })
+    });
+    const d = await r.json();
+    if(d.error){ out.innerHTML = `<div class="err">${esc(d.error)}</div>`; return; }
+    if(d.refusal){ renderRefusal(d.refusal); return; }
+    renderResult(d);
+  }catch(err){
+    out.innerHTML = `<div class="err">Something went wrong: ${esc(String(err))}</div>`;
+  }
+});
+</script>
+</body>
+</html>

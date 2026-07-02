@@ -141,8 +141,8 @@
   .miss textarea{min-height:60px}
 
   footer{margin:56px 0 40px;padding-top:22px;border-top:1px solid var(--line);
-    font-size:12.5px;color:var(--ink-3);line-height:1.6}
-  footer .disc{max-width:70ch}
+    font-size:12.5px;color:var(--ink-3);line-height:1.6;text-align:center}
+  footer .disc{max-width:760px;margin:0 auto}
   footer a{color:var(--ink-2)}
 
   @media (max-width:720px){
@@ -250,6 +250,24 @@
     </div>
   </details>
 
+  <!-- feedback -->
+  <details class="lit">
+    <summary>Feedback welcome</summary>
+    <div class="lit-body">
+      <p class="ctx-note" style="margin-bottom:14px">This is a work in progress and I'd
+        value your read. Where did it fail, in your view? Where did it get something
+        right? What's missing, wrong, or worth pushing on? Candid reactions are the
+        most useful.</p>
+      <div class="miss">
+        <p><strong>Send your thoughts.</strong> What worked, what didn't, where it broke.</p>
+        <textarea id="feedback" placeholder="Where it failed, where it excelled, what you'd change…"></textarea>
+        <div style="margin-top:10px">
+          <a class="btn" id="feedbacklink" href="#" style="text-decoration:none;display:inline-block">Email this feedback</a>
+        </div>
+      </div>
+    </div>
+  </details>
+
   <footer>
     <p class="disc"><strong>Illustrative research demonstration. Non-production.</strong>
        The band-conditioning shown here is prompt-based (v1); the framework's production
@@ -257,8 +275,8 @@
        No warranty. Not for real-world deployment, not for use by children, not professional
        advice. No data is collected or retained.</p>
     <p style="margin-top:10px">A research demonstration by Meredith Bouvier, PhD ·
-       feedback welcome: <a href="mailto:merrybouv@proton.me">merrybouv@proton.me</a> ·
-       <a href="https://github.com/merrybouv/Baseline" target="_blank" rel="noopener">source on GitHub</a></p>
+       <a href="mailto:merrybouv@proton.me">merrybouv@proton.me</a> ·
+       <a href="https://github.com/merrybouv/Baseline" target="_blank" rel="noopener">full code on GitHub</a></p>
   </footer>
 </main>
 
@@ -312,6 +330,14 @@ const suggestlink = document.getElementById("suggestlink");
 suggestlink.addEventListener("click", ()=>{
   const body = encodeURIComponent(suggest.value || "");
   suggestlink.href = `mailto:merrybouv@proton.me?subject=${encodeURIComponent("Baseline — literature suggestion")}&body=${body}`;
+});
+
+// feedback mailto
+const feedback = document.getElementById("feedback");
+const feedbacklink = document.getElementById("feedbacklink");
+feedbacklink.addEventListener("click", ()=>{
+  const body = encodeURIComponent(feedback.value || "");
+  feedbacklink.href = `mailto:merrybouv@proton.me?subject=${encodeURIComponent("Baseline — feedback")}&body=${body}`;
 });
 
 const out = document.getElementById("output");

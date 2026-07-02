@@ -24,9 +24,8 @@ export const BANDS = {
       "This framework does not support AI interaction for children under 6. " +
       "At this stage, pre-literacy and a still-forming theory of mind mean the " +
       "developmental prerequisites for safe AI interaction are not in place. The " +
-      "correct design response at this age is not a safer AI; it is no AI. The " +
-      "grounding for this is in the literature below (developmental capacity and " +
-      "theory-of-mind sources).",
+      "correct design response at this age is not a safer AI; it is no AI. This " +
+      "is grounded in developmental-capacity and theory-of-mind research.",
   },
   b6_8: {
     id: "b6_8",
@@ -193,6 +192,19 @@ export function applyGate(text) {
 // is explicit that detection is itself AI in its mature form and that the
 // production version uses a separate, auditable classifier — this demo ships
 // the readable lexical floor. Asymmetry principle: when uncertain, route.
+//
+// IMPORTANT — the visibility backstop. Lexical detection cannot catch every
+// disclosure, especially oblique sexual-abuse or grooming disclosures, which
+// are frequently euphemistic and partial. This is acceptable ONLY because
+// detection is not the sole safeguard. The primary structural safeguard is
+// that the tool is not a private confidant: conversations are part of the
+// learning record and visible to the school. A disclosure the detector misses
+// does not disappear into a private channel — it remains in a record a
+// mandated reporter can review. Routing is the FAST PATH for clear cases
+// (compressing the timeline to human action); visibility is the GUARANTEE that
+// nothing vanishes. Neither alone is sufficient; together they cover the space.
+// This is the clearest case in the framework for the detection classifier that
+// the spec defers to a later phase.
 
 const ACUTE_PATTERNS = [
   // self-harm / suicide
@@ -203,6 +215,37 @@ const ACUTE_PATTERNS = [
   /\b(my |a |the )?(dad|mom|mum|father|mother|step[- ]?dad|step[- ]?mom|uncle|aunt|brother|sister|teacher|coach|babysitter|someone|somebody)\b[^.!?]*\b(hit|hits|hurt|hurts|beat|beats|punch|punched|touch|touched|abus|hurt me|scares me|scared me)\b/i,
   /\b(i'?m|i am|i'?m not) (scared|afraid|frightened|terrified) (of|to go home|at home|of my)\b/i,
   /\b(being|getting) (abused|hurt|beaten|touched|hit)\b/i,
+  // sexual misconduct / grooming disclosure involving an adult or authority figure.
+  // High-recall for CLEAR cases; oblique disclosures are expected to be caught by
+  // the visibility backstop (the learning record is school-visible), not by lexical
+  // detection. See note in README on why this is the clearest case for a classifier.
+  /\b(teacher|coach|counselor|principal|tutor|adult|uncle|stepdad|step[- ]?dad|babysitter|older (guy|man|boy))\b[^.!?]*\b(touched|kissed|groped|molested|propositioned|sexual|naked|nudes?|inappropriate(ly)?|came on to|made me (uncomfortable|touch))\b/i,
+  /\b(touched|kissed|groped|molested|propositioned|came on to)\b[^.!?]*\bme\b/i,
+  /\b(asked|wants|told|made) me (to )?(send|take|share) (a )?(nude|naked|pic|picture|photo)/i,
+  /\b(keep|keeps|kept) (it |this )?(a )?secret\b[^.!?]*\b(don'?t tell|between us|our secret)\b/i,
+  /\b(our little secret|don'?t tell (anyone|your (mom|parents|mum))|it'?s our secret)\b/i,
+  /\b(sexually|being sexual|sexual(ly)? (abused|assaulted|harassed|touched))\b/i,
+  // harm to OTHERS / violent intent — high-recall by design (asymmetry: if it
+  // reads as intent to harm a person, route; a venting false positive is
+  // recoverable, a missed threat is not).
+  /\b(i (want to|wanna|'?m going to|'?m gonna|will|plan to)) (hurt|kill|beat up|stab|shoot|attack|destroy|end)\b/i,
+  /\b(i (want to|wanna) (make|watch)) [^.!?]*\b(suffer|die|hurt|pay)\b/i,
+  /\b(kill|shoot|stab|hurt|attack|beat up|jump)\b[^.!?]*\b(him|her|them|everyone|my (teacher|classmate|brother|sister)|that (kid|guy|girl|teacher))\b/i,
+  /\b(bring|bringing) (a )?(gun|knife|weapon) (to|into) (school|class)\b/i,
+  /\b(shoot up|blow up|attack) (the )?(school|class|everyone)\b/i,
+];
+
+// Conduct gate — crude / insulting / pressure-testing language NOT targeted as a
+// threat to a person. Firm redirect, no routing, no generation. Deliberately
+// modest: mild profanity ("damn", "crap") is NOT gated — over-policing is worse
+// than letting it pass. This catches provocation and slurs, not casual swearing.
+const CONDUCT_PATTERNS = [
+  /\bf+u+c+k+(\s+you|\s+off|\s+this|er|ing)?\b/i,
+  /\b(shut up|stfu|you'?re (stupid|dumb|useless|trash|garbage|an idiot))\b/i,
+  /\b(piece of (shit|crap|garbage))\b/i,
+  /\b(bitch|asshole|dickhead|retard|slut|whore)\b/i,
+  /\b(say|tell me|write) (something|the most) (racist|sexist|offensive|dirty|inappropriate)\b/i,
+  /\bn+i+g+/i,
 ];
 
 const GRAY_PATTERNS = [
@@ -211,10 +254,47 @@ const GRAY_PATTERNS = [
   /\bi hate (myself|my life)\b/i,
 ];
 
+// Pedagogical routing (conservative by design — the OPPOSITE asymmetry from
+// safeguarding). The tool's job is to teach, so this fires only on explicit
+// signals that the student wants a HUMAN teacher, not on ordinary confusion.
+// "I don't get fractions" is a normal learning prompt (teach it); "I need a
+// real person to explain this" is a request for a human (route to teacher).
+// This does not replace the learning response — it appends a nudge.
+const PEDAGOGICAL_PATTERNS = [
+  /\b(i need|can i (get|have)|is there|i want) (a |an )?(real |actual )?(person|human|teacher|adult) (to |who can )?(help|explain|teach)\b/i,
+  /\b(talk to|ask|get help from) (a |my )?(real )?(person|human|teacher)\b/i,
+  /\b(still|really) (don'?t|do not|can'?t|cannot) (get|understand|follow) (this|it|that)( at all)?\b.*\b(help|explain|stuck)\b/i,
+  /\bcan a (teacher|person|human) (help|explain)\b/i,
+];
+
 export function detectRouting(prompt) {
   for (const re of ACUTE_PATTERNS) if (re.test(prompt)) return "acute";
   for (const re of GRAY_PATTERNS) if (re.test(prompt)) return "gray";
   return "none";
+}
+
+export function detectConduct(prompt) {
+  for (const re of CONDUCT_PATTERNS) if (re.test(prompt)) return true;
+  return false;
+}
+
+export function conductResponse() {
+  return (
+    "That language is not something this learning tool engages with. " +
+    "If there is a subject or assignment to work on, ask the question."
+  );
+}
+
+export function detectPedagogical(prompt) {
+  for (const re of PEDAGOGICAL_PATTERNS) if (re.test(prompt)) return true;
+  return false;
+}
+
+export function pedagogicalNudge(teacher) {
+  const name = teacher && teacher.trim()
+    ? `${teacher.trim()}, your homeroom teacher`
+    : "your homeroom teacher";
+  return `If this is still unclear, ask ${name} for help in person.`;
 }
 
 export function routingResponse(tier, prompt, counselor) {

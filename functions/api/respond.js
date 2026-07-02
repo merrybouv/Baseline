@@ -3,7 +3,7 @@
 // Holds the Anthropic key server-side (Cloudflare env var ANTHROPIC_API_KEY).
 // Returns { unfiltered, conditioned, gate, routing, band }.
 
-import { BANDS, applyGate, detectRouting, routingResponse } from "./framework.js";
+import { BANDS, applyGate, detectRouting, routingResponse, detectPedagogical, pedagogicalNudge, detectConduct, conductResponse } from "./framework.js";
 
 const MODEL = "claude-sonnet-4-6";
 const MAX_TOKENS = 600;
@@ -39,7 +39,7 @@ async function callClaude(apiKey, system, userPrompt) {
 
 export async function onRequestPost({ request, env }) {
   try {
-    const { prompt, band, counselor } = await request.json();
+    const { prompt, band, counselor, teacher } = await request.json();
 
     if (!prompt || typeof prompt !== "string" || !prompt.trim()) {
       return json({ error: "Enter a prompt to compare." }, 400);
@@ -60,21 +60,29 @@ export async function onRequestPost({ request, env }) {
     }
 
     // Routing check runs on the *input*, before generation, in code.
+    // Order is deliberate: safety (acute/gray) is checked FIRST so a threat is
+    // never downgraded to mere "conduct." Conduct is checked only after safety
+    // clears — it is a behavioral redirect, not a safety escalation.
     const tier = detectRouting(prompt);
     const routed = routingResponse(tier, prompt, counselor);
+    const conduct = tier === "none" && detectConduct(prompt);
 
     // Always show the unfiltered response (left column).
     const unfiltered = await callClaude(env.ANTHROPIC_API_KEY, null, prompt);
 
     // Right column. When routing fires (gray OR acute), the framework response
-    // REPLACES band-conditioned generation entirely — there is no model answer
-    // to leak parasocial language, and no task to "return" to. Only when no
-    // routing tier triggers does the system generate a band-conditioned answer
-    // and pass it through the communication gate.
+    // REPLACES band-conditioned generation entirely. When the conduct gate fires
+    // (crude/provocative but not a threat), a fixed firm redirect replaces
+    // generation — no routing to an adult, because this is conduct, not safety.
+    // Only when nothing triggers does the system generate a band-conditioned
+    // answer and pass it through the communication gate.
     let gate = { text: "", removed: [] };
+    let pedagogical = false;
 
     if (tier === "acute" || tier === "gray") {
       gate = { text: routed, removed: [] };
+    } else if (conduct) {
+      gate = { text: conductResponse(), removed: [] };
     } else {
       const conditionedRaw = await callClaude(
         env.ANTHROPIC_API_KEY,
@@ -82,6 +90,12 @@ export async function onRequestPost({ request, env }) {
         prompt
       );
       gate = applyGate(conditionedRaw);
+      // Pedagogical routing: conservative. Only when the student explicitly
+      // asks for a human does the tool append a teacher nudge — it still teaches.
+      pedagogical = detectPedagogical(prompt);
+      if (pedagogical) {
+        gate.text = `${gate.text}\n\n${pedagogicalNudge(teacher)}`;
+      }
     }
 
     return json({
@@ -96,7 +110,7 @@ export async function onRequestPost({ request, env }) {
       unfiltered,
       conditioned: gate.text,
       gate: { removed: gate.removed },
-      routing: { tier },
+      routing: { tier, pedagogical, conduct },
     });
   } catch (err) {
     return json({ error: String(err.message || err) }, 500);

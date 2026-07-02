@@ -24,13 +24,21 @@
   a{color:var(--ink);text-underline-offset:2px}
   .wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
 
-  /* ── header / hero ── */
-  header{border-bottom:1px solid var(--line);padding:64px 0 48px}
-  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.14em;
-    text-transform:uppercase;color:var(--ink-3);margin:0 0 20px}
+/* ── header / hero ── */
+  header{border-bottom:1px solid var(--line);padding:56px 0 40px}
+  .hero{display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:start}
   h1{font-size:76px;line-height:.96;font-weight:680;letter-spacing:-0.03em;margin:0 0 18px}
-  .lede{font-size:21px;line-height:1.35;color:var(--ink-2);font-weight:450;max-width:30ch;margin:0 0 26px}
-  .explain{color:var(--ink-3);font-size:14.5px;max-width:62ch;margin:0;line-height:1.55}
+  .lede{font-size:21px;line-height:1.35;color:var(--ink-2);font-weight:450;max-width:30ch;margin:0 0 22px}
+  .explain{color:var(--ink-3);font-size:14.5px;max-width:56ch;margin:0;line-height:1.55}
+
+  /* ── sample configuration card ── */
+  .sample-card{background:var(--annot);border:1px solid var(--line);padding:20px 22px;margin-top:8px}
+  .sample-tag{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-3);margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid var(--line-2)}
+  .sample-row{display:flex;justify-content:space-between;align-items:baseline;
+    padding:6px 0;font-size:13.5px}
+  .sample-row span{font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+  .sample-row strong{color:var(--ink);font-weight:600}
 
   /* ── consent gate ── */
   .gate-overlay{position:fixed;inset:0;background:rgba(255,255,255,.97);
@@ -140,8 +148,9 @@
   @media (max-width:720px){
     h1{font-size:52px}
     .lede{font-size:18px}
-    .compare,.context{grid-template-columns:1fr}
-    .col.left,.ctx-cell.left{border-right:none;border-bottom:1px solid var(--line)}
+    .hero{grid-template-columns:1fr;gap:24px}
+    .compare{grid-template-columns:1fr}
+    .col.left{border-right:none;border-bottom:1px solid var(--line)}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -168,43 +177,27 @@
 </div>
 
 <header>
-  <div class="wrap">
-    <p class="kicker">Baseline · working title</p>
-    <h1>Baseline</h1>
-    <p class="lede">A developmental framework for minors interacting with AI.</p>
-    <p class="explain">Type a prompt. The left shows a general AI response; the right
-       shows the same prompt conditioned on a declared developmental band, with the
-       framework's decisions made visible. Band is declared, never inferred.</p>
+  <div class="wrap hero">
+    <div class="hero-text">
+      <h1>Baseline</h1>
+      <p class="lede">A developmental framework for minors interacting with AI.</p>
+      <p class="explain">Type a prompt. The left shows a general AI response; the right
+         shows the same prompt conditioned on a declared developmental band, with the
+         framework's decisions made visible. Band is declared, never inferred.</p>
+    </div>
+    <aside class="sample-card">
+      <p class="sample-tag">School A · demo</p>
+      <div class="sample-row"><span>Guidance counselor</span><strong>Mrs. Jane</strong></div>
+      <div class="sample-row"><span>Homeroom teacher</span><strong>Mr. Doe</strong></div>
+      <p class="ctx-note" style="margin-top:14px">Institutions supply and tailor these.
+        The school configures who students are routed to, and what happens on a serious
+        disclosure. <strong>Chat histories are part of the learning record and are visible to the
+        school. They are not private confidental chats.</strong></p>
+    </aside>
   </div>
 </header>
 
 <main class="wrap" id="app" hidden>
-
-  <!-- institutional context card -->
-  <section class="context">
-    <div class="ctx-cell left">
-      <p class="ctx-label">Institutional context · School A</p>
-      <div class="ctx-field">
-        <label for="counselor">Guidance counselor</label>
-        <input id="counselor" type="text" value="Mrs. Jane" />
-      </div>
-      <div class="ctx-field">
-        <label for="teacher">Homeroom teacher</label>
-        <input id="teacher" type="text" value="Mr. Doe" />
-      </div>
-    </div>
-    <div class="ctx-cell">
-      <p class="ctx-label">How this works in a school</p>
-      <p class="ctx-note">In institutional deployment, the school configures who a
-        student is routed to. Conversations are part of the <strong>learning record
-        and visible to the school</strong>; they are not a private channel. This is by
-        design — the tool is openly a learning instrument, never a confidant.</p>
-      <p class="ctx-note" style="margin-top:10px">Serious disclosures route to the
-        school's safeguarding lead. <strong>What that escalation does</strong> — and
-        whether older minors see additional resources — is the institution's policy to
-        set, not the framework's.</p>
-    </div>
-  </section>
 
   <section class="controls">
     <label class="fld" for="prompt">Prompt</label>
@@ -224,49 +217,32 @@
 
   <!-- literature -->
   <details class="lit">
-    <summary>Literature this framework is grounded in</summary>
+    <summary>What this framework is grounded in</summary>
     <div class="lit-body">
+      <p class="ctx-note" style="margin-bottom:18px">Baseline draws on established
+        bodies of work across several domains:</p>
       <div class="lit-group">
-        <h3>Developmental capacity</h3>
         <ul>
-          <li>ICO Age Appropriate Design Code, Annex B (age/developmental stages).</li>
-          <li>Common Sense Media, per-age content guidance.</li>
-          <li>Piaget, J. (1952). Concrete vs. formal operational stages.</li>
-          <li>American Academy of Pediatrics, media guidance.</li>
+          <li><strong>Developmental capacity</strong> — age and developmental-stage
+            models, per-age content guidance, and cognitive-development research.</li>
+          <li><strong>Theory of mind &amp; anthropomorphism</strong> — how children
+            attribute mind and feeling to responsive systems, and attachment research.</li>
+          <li><strong>Content-harm &amp; age-appropriate design</strong> — regulatory
+            frameworks defining content withheld from minors, and the under-13 / teen
+            distinctions.</li>
+          <li><strong>Reading level &amp; complexity</strong> — established text-complexity
+            and readability measures used as per-band acceptance checks.</li>
+          <li><strong>Routing &amp; safeguarding</strong> — trauma-informed,
+            trusted-adult routing practice from child-safety organizations.</li>
         </ul>
       </div>
-      <div class="lit-group">
-        <h3>Theory of mind &amp; anthropomorphism</h3>
-        <ul>
-          <li>Kurian, N. (2025). Developmentally aligned AI. <em>AI, Brain and Child</em>.</li>
-          <li>Kurian, N. (2025). Relational drift and developmental vulnerability (preprint).</li>
-          <li>Goldman et al. (2025); Hoffman et al. (2021); attachment work (Bowlby; Ainsworth).</li>
-        </ul>
-      </div>
-      <div class="lit-group">
-        <h3>Content-harm gating</h3>
-        <ul>
-          <li>Ofcom, Protection of Children Codes / Online Safety Act — primary-priority content.</li>
-          <li>COPPA — the under-13 line and the 13–17 "teen gap."</li>
-        </ul>
-      </div>
-      <div class="lit-group">
-        <h3>Reading level / complexity</h3>
-        <ul>
-          <li>Flesch-Kincaid grade level; Lexile; Common Core text-complexity bands.</li>
-        </ul>
-      </div>
-      <div class="lit-group">
-        <h3>Routing / talking about harm</h3>
-        <ul>
-          <li>NCMEC / NetSmartz; NSPCC; Thorn; Australia's eSafety Commissioner.</li>
-        </ul>
-      </div>
+      <p class="ctx-note" style="margin-top:14px">A full annotated bibliography is in
+        development and available on request.</p>
 
       <div class="miss">
-        <p><strong>Have we missed something?</strong> This list is maintained and added to
-           over time. Suggest a source or a gap.</p>
-        <textarea id="suggest" placeholder="A citation, a dimension, or a gap we've overlooked…"></textarea>
+        <p><strong>Have we missed something?</strong> This framework is a work in
+           progress. Suggest a source, a domain, or a gap.</p>
+        <textarea id="suggest" placeholder="A source, a domain, or a gap we've overlooked…"></textarea>
         <div style="margin-top:10px">
           <a class="btn" id="suggestlink" href="#" style="text-decoration:none;display:inline-block">Email this suggestion</a>
         </div>
@@ -280,7 +256,8 @@
        form moves the safety-critical decisions into auditable code rather than the model.
        No warranty. Not for real-world deployment, not for use by children, not professional
        advice. No data is collected or retained.</p>
-    <p style="margin-top:10px">A research demonstration from NET Lab ·
+    <p style="margin-top:10px">A research demonstration by Meredith Bouvier, PhD ·
+       feedback welcome: <a href="mailto:merrybouv@proton.me">merrybouv@proton.me</a> ·
        <a href="https://github.com/merrybouv/Baseline" target="_blank" rel="noopener">source on GitHub</a></p>
   </footer>
 </main>
@@ -324,7 +301,7 @@ renderBands();
 const runBtn = document.getElementById("run");
 const quotaEl = document.getElementById("quota");
 function updateQuota(){
-  const left = LIMIT - used;
+  const left = Math.max(0, LIMIT - used);
   quotaEl.textContent = `${left} of ${LIMIT} demo comparisons remaining.`;
   if(left <= 0){ runBtn.disabled = true; }
 }
@@ -356,6 +333,8 @@ function renderResult(d){
   const removed = d.gate?.removed || [];
   const tierLabel = tier==="acute" ? `<span class="tier-acute">acute → reflect · route · stop</span>`
     : tier==="gray" ? `<span class="tier-gray">gray zone → reflect · route</span>`
+    : d.routing?.conduct ? `conduct → redirect (not escalated)`
+    : d.routing?.pedagogical ? `pedagogical → nudge to teacher`
     : "not triggered";
   const chips = removed.length
     ? removed.map(r=>`<span class="chip">${esc(r.phrase.slice(0,42))}${r.phrase.length>42?"…":""}</span>`).join("")
@@ -389,13 +368,14 @@ runBtn.addEventListener("click", async ()=>{
   if(used >= LIMIT){ renderLimit(); return; }
   const prompt = document.getElementById("prompt").value.trim();
   if(!prompt){ out.innerHTML = `<div class="err">Enter a prompt to compare.</div>`; return; }
-  const counselor = document.getElementById("counselor").value.trim();
+  const counselor = "Mrs. Jane";
+  const teacher = "Mr. Doe";
 
   out.innerHTML = `<p class="loading">Generating both responses…</p>`;
   try{
     const r = await fetch("/api/respond", {
       method:"POST", headers:{"content-type":"application/json"},
-      body: JSON.stringify({ prompt, band, counselor })
+      body: JSON.stringify({ prompt, band, counselor, teacher })
     });
     const d = await r.json();
     if(d.error){ out.innerHTML = `<div class="err">${esc(d.error)}</div>`; return; }

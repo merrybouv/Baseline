@@ -84,43 +84,9 @@ Baseline/
 `framework.js` is the auditable single source of truth: every band prompt, every gate
 pattern, and every routing/conduct rule lives there in readable form.
 
----
-
-## Deploy on Cloudflare Pages
-
-1. Push this repo to GitHub (or use `wrangler pages deploy`).
-2. Cloudflare → Workers & Pages → Create → Pages → Connect to Git → select this repo.
-3. **Build settings:** Framework preset = None, Build command = blank,
-   **Build output directory = `public`**. (Functions in `/functions` are auto-detected.)
-4. **Add the key as a secret:** Pages project → Settings → Environment variables →
-   `ANTHROPIC_API_KEY` = your key, marked encrypted, added to Production. **Redeploy**
-   after adding it so it takes effect.
-5. The page is served from `public/`; the frontend calls `/api/respond`, which runs
-   `functions/api/respond.js` server-side so the key is never exposed to the browser.
-
-### Local preview
-
-```
-npx wrangler pages dev public --ip=127.0.0.1
-```
-
-Put your key in a `.dev.vars` file in the project root (gitignored):
-
-```
-ANTHROPIC_API_KEY=sk-ant-...
-```
-
-Then open **`http://127.0.0.1:8788`** (use `127.0.0.1`, not `localhost` — on macOS
-`localhost` may resolve to IPv6 and hang).
-
----
-
-## Cost controls
-
-- The frontend limits each visitor to a small number of comparisons.
-- The real protection is on the Anthropic account: prepaid credits and/or a monthly
-  spend cap. The demo uses Claude Sonnet (inexpensive); each comparison is two short
-  calls. Set a spend cap and keep auto-reload off before sharing publicly.
+The frontend is a single static page in `public/`. The API logic runs server-side in
+`functions/api/` (so the model key is never exposed to the browser) and makes two calls
+per prompt: one unconditioned, one conditioned on the declared band.
 
 ---
 

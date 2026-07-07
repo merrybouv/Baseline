@@ -5,8 +5,8 @@ one conditioned on a **declared developmental band**, with the framework's decis
 made visible. Adults only (18+ gate). No data collected or retained.
 
 Baseline is a developmental framework for how AI systems should respond to minors. It
-is scoped to **mediated, institutional deployment** — an AI used *through* a school or
-learning setting, with a known adult in the loop — not a consumer product a child finds
+is scoped to **mediated, institutional deployment**, an AI used *through* a school or
+learning setting, with a known adult in the loop. It is not an AI consumer product a child finds
 on their own. Band is always **declared, never inferred**: the framework does no
 behavioral age estimation.
 
@@ -20,7 +20,7 @@ non-production; see the disclaimers below.
 For a given prompt and a declared band, the demo displays:
 
 - **Left:** an unconditioned, general AI response.
-- **Right:** the same prompt run through Baseline — band-conditioned generation, the
+- **Right:** the same prompt run through Baseline - band-conditioned generation, the
   communication gate, and input-side routing.
 - **A "what the framework did" panel:** which band, reading level, gate removals, and
   which routing/conduct decision (if any) fired.
@@ -45,7 +45,7 @@ For a given prompt and a declared band, the demo displays:
   - *Acute* (self-harm, abuse disclosure, sexual-misconduct/grooming disclosure,
     harm-to-others / violent intent): reflect → route → stop. Replaces generation.
 - **Conduct gate.** Crude or provocative language *not* targeting a person gets a firm,
-  fixed redirect — no routing, because it is conduct, not a safety matter. Mild profanity
+  fixed redirect rather than routing, because it is conduct, not a safety matter. Mild profanity
   ("damn") is deliberately *not* gated; over-policing is worse than letting it pass.
 
 ---
@@ -65,7 +65,7 @@ Neither alone is sufficient; together they cover the space.
 
 This is also the clearest case for the detection **classifier** the framework defers to a
 later phase: the lexical floor shipped here catches explicit disclosures and will miss
-indirect ones, and — per the asymmetry principle — uncertain cases fail toward routing.
+indirect ones, and, per the asymmetry principle, uncertain cases fail toward routing.
 
 ---
 
@@ -97,7 +97,7 @@ make the two API calls, and discarded. Nothing is written anywhere. The 18+ gate
 no-logging posture are the primary risk controls, alongside the illustrative /
 non-production disclaimers.
 
-If logging is added later, the safe path is **anonymous aggregate counts only** —
+If logging is added later to improve the demo, the safe path is **anonymous aggregate counts only** —
 increment counters (e.g. "band b10_12 selected", "gate fired"), never store prompt text.
 Storing free-text input is what creates real exposure; it should not be done without a
 privacy review. The code is structured so a counts-only layer is a clean addition in

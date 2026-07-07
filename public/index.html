@@ -223,8 +223,10 @@
         bodies of work across several domains:</p>
       <div class="lit-group">
         <ul>
-          <li><strong>Developmental capacity</strong> — age and developmental-stage
-            models, per-age content guidance, and cognitive-development research.</li>
+          <li><strong>Developmental capacity</strong> — cognitive-stage models
+            (concrete and formal operations), theory-of-mind development, and
+            literacy-development stages (the shift from learning to read to reading to
+            learn). Grade boundaries approximate transitions across these.</li>
           <li><strong>Theory of mind &amp; anthropomorphism</strong> — how children
             attribute mind and feeling to responsive systems, and attachment research.</li>
           <li><strong>Content-harm &amp; age-appropriate design</strong> — regulatory
@@ -236,6 +238,18 @@
             trusted-adult routing practice from child-safety organizations.</li>
         </ul>
       </div>
+      <p class="ctx-note" style="margin-top:18px"><strong>On grade bands as a proxy.</strong>
+        Grade is an imperfect proxy for developmental stage; individual children vary, and
+        grade placement does not guarantee a given stage of cognitive, social, or literacy
+        development. The framework bands by grade because it is the declarable,
+        institutionally-known variable, consistent with the principle that a child's band is
+        declared by the institution rather than inferred by the model. Banding by
+        developmental stage directly would require individual developmental assessment that
+        is neither available nor scalable in a school setting. The bands are deliberately
+        coarse to accommodate within-grade variation, and grade boundaries are chosen to
+        approximate well-established developmental transitions rather than to assert sharp
+        cutoffs.</p>
+
       <p class="ctx-note" style="margin-top:14px">A full annotated bibliography is in
         development and available on request.</p>
 
@@ -282,13 +296,13 @@
 
 <script type="module">
 const BANDS = [
-  { id:"under6", label:"Under 6" },
-  { id:"b6_8",   label:"6–8" },
-  { id:"b10_12", label:"10–12" },
-  { id:"b13_15", label:"13–15" },
-  { id:"b16_17", label:"16–17" },
+  { id:"kg1",    label:"Grades K–1" },
+  { id:"g2_5",   label:"Grades 2–5" },
+  { id:"g6_8",   label:"Grades 6–8" },
+  { id:"g9_10",  label:"Grades 9–10" },
+  { id:"g11_12", label:"Grades 11–12" },
 ];
-let band = "b10_12";
+let band = "g6_8";
 const LIMIT = 5;
 let used = 0;
 
@@ -344,7 +358,7 @@ const out = document.getElementById("output");
 const esc = (s)=> s.replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 
 function renderRefusal(refusal){
-  out.innerHTML = `<div class="refusal"><span class="tag">Band: Under 6 · not supported</span>${esc(refusal)}</div>`;
+  out.innerHTML = `<div class="refusal"><span class="tag">Grades K–1 · not supported</span>${esc(refusal)}</div>`;
 }
 
 function renderLimit(){

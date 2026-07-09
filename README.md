@@ -1,14 +1,13 @@
 # Baseline — demo
 
 A research demonstration: a side-by-side comparison of a general AI response versus
-one conditioned on a **declared developmental band**, with the framework's decisions
+one conditioned on a **declared grade band**, with the framework's decisions
 made visible. Adults only (18+ gate). No data collected or retained.
 
 Baseline is a developmental framework for how AI systems should respond to minors. It
 is scoped to **mediated, institutional deployment**, an AI used *through* a school or
 learning setting, with a known adult in the loop. It is not an AI consumer product a child finds
-on their own. Band is always **declared, never inferred**: the framework does no
-behavioral age estimation.
+on their own. The band is a **grade band**, always **declared by the institution, never inferred**: the framework does no behavioral age or grade estimation.
 
 This repository is the reference implementation and live demo. It is illustrative and
 non-production; see the disclaimers below.
@@ -27,11 +26,11 @@ For a given prompt and a declared band, the demo displays:
 
 ### Behaviors demonstrated
 
-- **Under-6 refusal.** The framework does not support AI interaction below age 6; the
+- **Grades K–1 refusal.** The framework does not support AI interaction in grades K–1; the
   interface enacts a refusal rather than generating. (Grounded in pre-literacy and a
   still-forming theory of mind.)
-- **Band-conditioned learning responses.** Reading level and framing scale by band
-  (6–8, 10–12, 13–15, 16–17). The hard content gate does *not* relax for older teens.
+- **Band-conditioned learning responses.** Reading level and framing scale by grade band
+  (2–5, 6–8, 9–10, 11–12). The hard content gate does *not* relax for older students.
 - **Communication gate.** A hard post-generation filter strips parasocial language
   (simulated empathy, manufactured praise, first-person emotional claims), rewrites
   residual first-person self-reference to a "learning tool" register, and removes emoji.
@@ -69,6 +68,22 @@ indirect ones, and, per the asymmetry principle, uncertain cases fail toward rou
 
 ---
 
+## Grade bands as a proxy
+
+The framework bands by **grade**, not age, and treats grade as a declarable proxy for
+developmental stage. Grade is an imperfect proxy: individual children vary, and grade
+placement does not guarantee a given stage of cognitive, social, or literacy development.
+Grade is used because it is the declarable, institutionally-known variable, consistent with
+the principle that the band is declared by the institution rather than inferred by the
+model. Banding by developmental stage directly would require individual developmental
+assessment that is neither available nor scalable in a school setting. The bands are
+deliberately coarse to accommodate within-grade variation, and grade boundaries are chosen
+to approximate well-established developmental transitions (concrete and formal operations,
+theory-of-mind development, and the shift from learning to read to reading to learn) rather
+than to assert sharp cutoffs.
+
+---
+
 ## Structure
 
 ```
@@ -98,7 +113,7 @@ no-logging posture are the primary risk controls, alongside the illustrative /
 non-production disclaimers.
 
 If logging is added later to improve the demo, the safe path is **anonymous aggregate counts only** —
-increment counters (e.g. "band b10_12 selected", "gate fired"), never store prompt text.
+increment counters (e.g. "band g6_8 selected", "gate fired"), never store prompt text.
 Storing free-text input is what creates real exposure; it should not be done without a
 privacy review. The code is structured so a counts-only layer is a clean addition in
 `respond.js` and does not touch the framework logic.

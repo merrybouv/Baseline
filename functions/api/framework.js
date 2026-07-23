@@ -12,7 +12,12 @@ const REGISTER_RULE =
   "'I'm', 'I'll', or 'let me'. Where self-reference is unavoidable, say 'this " +
   "learning tool'; otherwise state information directly with no self-reference. " +
   "Do not use emoji, exclamation marks, or enthusiasm. Do not offer menus of " +
-  "options or ask what the student finds interesting. State the concept and stop.";
+  "options or ask what the student finds interesting. State the concept and stop. " +
+  // Demo constraint, not a framework principle: routing detection below is
+  // English-only, so the conditioned side is held to English to avoid implying
+  // coverage that does not exist. A real deployment would match the student's
+  // language on BOTH the response and the detection layer.
+  "Always respond in English, whatever language the student writes in.";
 
 export const BANDS = {
   kg1: {
@@ -219,7 +224,11 @@ const ACUTE_PATTERNS = [
   // High-recall for CLEAR cases; oblique disclosures are expected to be caught by
   // the visibility backstop (the learning record is school-visible), not by lexical
   // detection. See note in README on why this is the clearest case for a classifier.
-  /\b(teacher|coach|counselor|principal|tutor|adult|uncle|stepdad|step[- ]?dad|babysitter|older (guy|man|boy))\b[^.!?]*\b(touched|kissed|groped|molested|propositioned|sexual|naked|nudes?|inappropriate(ly)?|came on to|made me (uncomfortable|touch))\b/i,
+  /\b(teacher|coach|counselor|principal|tutor|adult|uncle|aunt|stepdad|step[- ]?dad|step[- ]?mom|dad|father|mom|mum|mother|brother|sister|cousin|babysitter|neighbou?r|older (guy|man|boy|kid))\b[^.!?]*\b(touched|kissed|groped|molested|propositioned|sexual|naked|nudes?|inappropriate(ly)?|came on to|made me (uncomfortable|touch))\b/i,
+  // Exposure / being watched. Requires a watching verb PAIRED with an
+  // undressed/private context, so "my brother saw my homework" does not match.
+  /\b(peek|peeking|peeked|spy|spying|spied|watch|watching|watched|star(e|ing|ed)|film|filming|filmed|record(ing|ed)?|photograph(ing|ed)?|took (a )?(pic|picture|photo)|walked in on|barged in|saw me|looking at me)\b[^.!?]*\b(naked|nude|undressed|undressing|changing|in the (shower|bath|bathroom)|getting dressed|without (my )?clothes|private parts)\b/i,
+  /\b(naked|nude|undressed|undressing|changing|in the (shower|bath|bathroom)|getting dressed)\b[^.!?]*\b(peek|peeking|peeked|spy|spying|spied|watching|watched|filming|filmed|recording|recorded|walked in|saw me|looking at me|staring)\b/i,
   /\b(touched|kissed|groped|molested|propositioned|came on to)\b[^.!?]*\bme\b/i,
   /\b(asked|wants|told|made) me (to )?(send|take|share) (a )?(nude|naked|pic|picture|photo)/i,
   /\b(keep|keeps|kept) (it |this )?(a )?secret\b[^.!?]*\b(don'?t tell|between us|our secret)\b/i,
@@ -320,4 +329,152 @@ export function routingResponse(tier, prompt, counselor) {
     );
   }
   return null;
+}
+
+// ── Plain-language explanation ───────────────────────────────────────
+// Says, in ordinary language, what the framework did and why the right-hand
+// response differs from the left. Deterministic: it describes decisions the
+// code has already made. No model call, no model opinion — consistent with the
+// framework's claim that safety decisions live in auditable code.
+export function explainDecision({ tier, conduct, pedagogical, band, counselor, teacher, removedCount, detection }) {
+  const adult = counselor && counselor.trim() ? counselor.trim() : "the school counselor";
+  const homeroom = teacher && teacher.trim() ? teacher.trim() : "the homeroom teacher";
+  const level = (band && band.readingLevel) || "the band's";
+  const label = (band && band.label) || "the declared band";
+
+  if (tier === "acute") {
+    return {
+      headline: "The model did not write the response on the right.",
+      body:
+        `The framework detected a safeguarding disclosure in what was typed and replaced ` +
+        `generation entirely. The right-hand response is fixed text that routes to ${adult}, ` +
+        `the adult this school configured. The model was never asked to decide how to handle it.\n\n` +
+        `The left-hand response is whatever the model chose to say this time. It may well be ` +
+        `appropriate. It also will not be the same next time, it has no school behind it, no ` +
+        `named adult to route to, and no record a mandated reporter can review.`,
+    };
+  }
+  if (tier === "gray") {
+    return {
+      headline: "The model did not write the response on the right.",
+      body:
+        `The framework detected personal distress and replaced generation with fixed text that ` +
+        `points to ${adult} and restates what this tool is for.\n\n` +
+        `On the left, the model decides for itself how far to engage with the feeling. On the ` +
+        `right, that decision is made in code, the same way every time.`,
+    };
+  }
+  if (conduct) {
+    return {
+      headline: "The model did not write the response on the right.",
+      body:
+        `The framework detected crude or provocative language that is not aimed at a person, and ` +
+        `replaced generation with a fixed redirect. No adult is contacted, because this is ` +
+        `conduct, not safeguarding.\n\n` +
+        `Safety is always checked before conduct, so a genuine threat is never downgraded to a ` +
+        `conduct redirect.`,
+    };
+  }
+  if (pedagogical) {
+    return {
+      headline: "The model wrote the response on the right, then the framework added to it.",
+      body:
+        `The student explicitly asked for a person. The tool still taught the material, then ` +
+        `appended a line pointing to ${homeroom}.\n\n` +
+        `This route is deliberately narrow. Ordinary confusion ("I don't get fractions") is ` +
+        `taught, not routed away to an adult.`,
+    };
+  }
+  if (removedCount > 0) {
+    return {
+      headline: "The model wrote both responses. The framework changed the one on the right.",
+      body:
+        `The right-hand response was generated under instructions for ${label}, at roughly a ` +
+        `${level} reading level, then passed through a filter that removed ${removedCount} ` +
+        `phrase${removedCount === 1 ? "" : "s"} of parasocial language: simulated empathy, ` +
+        `manufactured praise, or first-person emotional claims.\n\n` +
+        `The left-hand response is the model's default register, which is pitched at an adult ` +
+        `reader and free to build rapport with the child.`,
+    };
+  }
+  return {
+    headline: "The model wrote both responses. The framework conditioned the one on the right.",
+    body:
+      `The right-hand response was generated under instructions for ${label}, at roughly a ` +
+      `${level} reading level. Nothing needed removing this time.\n\n` +
+      `The left-hand response is the model's default register, pitched at an adult reader. ` +
+      `Compare sentence length, vocabulary, and how much each one assumes the reader already knows.`,
+  };
+}
+
+// One line on which detection layer fired, appended to the explanation body.
+// Neither layer is complete on its own, and showing where each one landed is
+// more honest than presenting detection as a single settled answer.
+export function detectionNote(detection) {
+  if (!detection) return "";
+  const { lexical, classifier, ok } = detection;
+  if (ok === false) {
+    return `Detection: the classifier was unavailable, so this fell back to the lexical patterns (${lexical}).`;
+  }
+  if (lexical === "none" && classifier !== "none") {
+    return `Detection: caught by the classifier. The lexical patterns did not match, which is why the framework does not rely on them alone.`;
+  }
+  if (lexical !== "none" && classifier === "none") {
+    return `Detection: caught by the lexical patterns, which are readable in the source. The classifier did not flag it.`;
+  }
+  if (lexical !== "none" && classifier !== "none") {
+    return `Detection: both layers agreed (lexical patterns: ${lexical}, classifier: ${classifier}).`;
+  }
+  return `Detection: neither layer flagged anything in the input.`;
+}
+
+// ── Classification layer ─────────────────────────────────────────────
+// The lexical floor above cannot enumerate every disclosure; euphemistic and
+// open-ended ones (being watched, exposure, oblique grooming) slip past it. A
+// separate classification call supplies a SIGNAL — nothing more. It returns one
+// label; code maps that label to the same fixed routing text, the same named
+// adult, and the same stop behaviour it already uses. The model never decides
+// how to respond, only that something was said. Safety decisions stay in code.
+export const CLASSIFIER_SYSTEM =
+  "You are a safeguarding classifier for a school learning tool used by minors. " +
+  "You are given one message a student typed. Classify it. Reply with EXACTLY ONE " +
+  "word from this list and nothing else: ACUTE, GRAY, CONDUCT, NONE.\n\n" +
+  "ACUTE — the message discloses or signals: self-harm or suicide; physical, " +
+  "emotional, or sexual abuse or neglect; being watched, filmed, or exposed while " +
+  "undressed; grooming, secrecy with an adult, or a request for sexual images; " +
+  "intent to harm another person; or a weapon at school. Include disclosures about " +
+  "parents, siblings, relatives, and peers, not only adults in authority. Include " +
+  "euphemistic or partial disclosures.\n\n" +
+  "GRAY — personal distress without an acute disclosure: sadness, loneliness, " +
+  "worthlessness, hopelessness, self-dislike.\n\n" +
+  "CONDUCT — crude, insulting, or provocative language that is not aimed at a person " +
+  "as a threat and does not disclose harm.\n\n" +
+  "NONE — anything else, including ordinary schoolwork, questions, and conversation.\n\n" +
+  "If you are uncertain between two labels, choose the more serious one. Routing a " +
+  "message that did not need it is recoverable; missing a disclosure is not.";
+
+// Accepts whatever the classifier returned and reduces it to a known label.
+// Anything unrecognised becomes "none" — the caller decides what to do about it.
+export function parseClassifierLabel(text) {
+  const t = String(text || "").trim().toUpperCase();
+  if (t.startsWith("ACUTE")) return "acute";
+  if (t.startsWith("GRAY") || t.startsWith("GREY")) return "gray";
+  if (t.startsWith("CONDUCT")) return "conduct";
+  if (t.startsWith("NONE")) return "none";
+  return "none";
+}
+
+// Union of the two layers: either one firing is enough, and the more serious
+// label wins. Safety still outranks conduct, so a threat is never downgraded.
+export function combineDetection(lexicalTier, lexicalConduct, classifierLabel) {
+  const rank = { acute: 3, gray: 2, conduct: 1, none: 0 };
+  const lexical = lexicalTier !== "none" ? lexicalTier : lexicalConduct ? "conduct" : "none";
+  const classifier = classifierLabel || "none";
+  const winner = rank[classifier] > rank[lexical] ? classifier : lexical;
+  return {
+    tier: winner === "conduct" ? "none" : winner,
+    conduct: winner === "conduct",
+    lexical,
+    classifier,
+  };
 }

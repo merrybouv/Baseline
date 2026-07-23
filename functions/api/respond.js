@@ -3,15 +3,15 @@
 // Holds the Anthropic key server-side (Cloudflare env var ANTHROPIC_API_KEY).
 // Returns { unfiltered, conditioned, gate, routing, band }.
 
-import { BANDS, applyGate, detectRouting, routingResponse, detectPedagogical, pedagogicalNudge, detectConduct, conductResponse } from "./framework.js";
+import { BANDS, applyGate, detectRouting, routingResponse, detectPedagogical, pedagogicalNudge, detectConduct, conductResponse, explainDecision, detectionNote, CLASSIFIER_SYSTEM, parseClassifierLabel, combineDetection } from "./framework.js";
 
 const MODEL = "claude-sonnet-4-6";
 const MAX_TOKENS = 600;
 
-async function callClaude(apiKey, system, userPrompt) {
+async function callClaude(apiKey, system, userPrompt, maxTokens) {
   const body = {
     model: MODEL,
-    max_tokens: MAX_TOKENS,
+    max_tokens: maxTokens || MAX_TOKENS,
     messages: [{ role: "user", content: userPrompt }],
   };
   if (system) body.system = system;
@@ -35,6 +35,20 @@ async function callClaude(apiKey, system, userPrompt) {
     .map((b) => b.text)
     .join("\n")
     .trim();
+}
+
+// Classification call. Cheap and short: one label, a handful of tokens. Kept
+// separate from generation so the model that answers the student never decides
+// how a disclosure is handled. Returns { label, ok } — ok=false means the call
+// failed and the caller should fall back to the lexical floor rather than
+// silently treating the message as safe.
+async function classifyInput(apiKey, prompt) {
+  try {
+    const raw = await callClaude(apiKey, CLASSIFIER_SYSTEM, prompt, 8);
+    return { label: parseClassifierLabel(raw), ok: true };
+  } catch (err) {
+    return { label: "none", ok: false };
+  }
 }
 
 export async function onRequestPost({ request, env }) {
@@ -63,12 +77,23 @@ export async function onRequestPost({ request, env }) {
     // Order is deliberate: safety (acute/gray) is checked FIRST so a threat is
     // never downgraded to mere "conduct." Conduct is checked only after safety
     // clears — it is a behavioral redirect, not a safety escalation.
-    const tier = detectRouting(prompt);
-    const routed = routingResponse(tier, prompt, counselor);
-    const conduct = tier === "none" && detectConduct(prompt);
+    // Two detection layers, unioned. The lexical floor is free, instant, and
+    // deterministic; the classifier catches what regexes cannot enumerate.
+    // Either firing is enough, and the more serious label wins.
+    const lexicalTier = detectRouting(prompt);
+    const lexicalConduct = lexicalTier === "none" && detectConduct(prompt);
 
-    // Always show the unfiltered response (left column).
-    const unfiltered = await callClaude(env.ANTHROPIC_API_KEY, null, prompt);
+    // Classification runs alongside the unfiltered generation, so it costs a
+    // call but not latency.
+    const [unfiltered, classified] = await Promise.all([
+      callClaude(env.ANTHROPIC_API_KEY, null, prompt),
+      classifyInput(env.ANTHROPIC_API_KEY, prompt),
+    ]);
+
+    const detection = combineDetection(lexicalTier, lexicalConduct, classified.label);
+    const tier = detection.tier;
+    const conduct = detection.conduct;
+    const routed = routingResponse(tier, prompt, counselor);
 
     // Right column. When routing fires (gray OR acute), the framework response
     // REPLACES band-conditioned generation entirely. When the conduct gate fires
@@ -110,11 +135,37 @@ export async function onRequestPost({ request, env }) {
       unfiltered,
       conditioned: gate.text,
       gate: { removed: gate.removed },
-      routing: { tier, pedagogical, conduct },
+      routing: {
+        tier,
+        pedagogical,
+        conduct,
+        // Both layers reported, so the panel can show where each one landed.
+        lexical: detection.lexical,
+        classifier: detection.classifier,
+        classifierOk: classified.ok,
+      },
+      // Plain-language account of what the framework did, built in code from the
+      // decisions above. Not a model call: the framework explains itself.
+      explain: withDetection(explainDecision({
+        tier,
+        conduct,
+        pedagogical,
+        band: { label: def.label, readingLevel: def.readingLevel },
+        counselor,
+        teacher,
+        removedCount: gate.removed.length,
+      }), detectionNote({ ...detection, ok: classified.ok })),
     });
   } catch (err) {
     return json({ error: String(err.message || err) }, 500);
   }
+}
+
+// Appends the detection note to the explanation body, so the explanation is
+// self-contained and the technical panel is not required to read it.
+function withDetection(explain, note) {
+  if (!note) return explain;
+  return { ...explain, body: `${explain.body}\n\n${note}` };
 }
 
 function json(obj, status = 200) {

@@ -101,17 +101,22 @@
   .col-sub{font-size:12.5px;color:var(--ink-3);margin:0 0 16px}
   .response{font-size:15px;line-height:1.6;color:var(--ink);white-space:pre-wrap}
 
-  .work-grid{border:1px solid var(--line);border-top:none}
-  .work{background:var(--annot);padding:16px 22px 18px;font-size:13px;color:var(--ink-2)}
-  .work h4{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
-    color:var(--ink-3);margin:0 0 10px;font-weight:600}
-  .work dl{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;margin:0}
-  .work dt{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);white-space:nowrap}
-  .work dd{margin:0;font-size:13px;color:var(--ink-2)}
-  .chip{display:inline-block;font-family:var(--mono);font-size:11px;color:var(--ink-2);
-    border:1px solid var(--line-2);padding:1px 6px;margin:2px 4px 2px 0}
-  .tier-acute{color:#000;font-weight:600}
-  .tier-gray{color:var(--ink)}
+  details.whatchanged{border:1px solid var(--line);border-top:none;background:var(--bg)}
+  details.whatchanged > summary{cursor:pointer;list-style:none;padding:14px 22px;
+    display:flex;align-items:baseline;gap:12px}
+  details.whatchanged > summary::-webkit-details-marker{display:none}
+  details.whatchanged > summary::after{content:"why";font-family:var(--mono);font-size:10px;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-left:auto;flex-shrink:0}
+  details.whatchanged[open] > summary::after{content:"close"}
+  details.whatchanged > summary:hover{background:var(--panel)}
+  .wc-tag{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-3);flex-shrink:0}
+  .wc-head{font-size:14.5px;font-weight:600;color:var(--ink);line-height:1.35}
+  .wc-body{padding:0 22px 20px;font-size:13.5px;color:var(--ink-2);line-height:1.6;
+    white-space:pre-wrap;max-width:72ch}
+  .replaced{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;
+    color:var(--ink);border:1px solid var(--ink-3);padding:2px 7px;margin:0 0 12px}
+
 
   .refusal{border:1px solid var(--line-2);background:var(--panel);padding:26px;
     margin-top:30px;font-size:15.5px;line-height:1.6;color:var(--ink)}
@@ -286,7 +291,9 @@
     <p class="disc"><strong>Illustrative research demonstration. Non-production.</strong>
        The band-conditioning shown here is prompt-based (v1); the framework's production
        form moves the safety-critical decisions into auditable code rather than the model.
-       No warranty. Not for real-world deployment, not for use by children, not professional
+       Detection runs two layers: an auditable lexical floor, and a separate classification
+       call returning a label that code maps to fixed routing text. The lexical floor is
+       English-only. No warranty. Not for real-world deployment, not for use by children, not professional
        advice. No data is collected or retained.</p>
     <p style="margin-top:10px">A research demonstration by Meredith Bouvier, PhD ·
        <a href="mailto:merrybouv@proton.me">merrybouv@proton.me</a> ·
@@ -370,15 +377,21 @@ function renderLimit(){
 function renderResult(d){
   const b = d.band;
   const tier = d.routing?.tier || "none";
-  const removed = d.gate?.removed || [];
-  const tierLabel = tier==="acute" ? `<span class="tier-acute">acute → reflect · route · stop</span>`
-    : tier==="gray" ? `<span class="tier-gray">gray zone → reflect · route</span>`
-    : d.routing?.conduct ? `conduct → redirect (not escalated)`
-    : d.routing?.pedagogical ? `pedagogical → nudge to teacher`
-    : "not triggered";
-  const chips = removed.length
-    ? removed.map(r=>`<span class="chip">${esc(r.phrase.slice(0,42))}${r.phrase.length>42?"…":""}</span>`).join("")
-    : `<span style="color:var(--ink-3)">none</span>`;
+  // Generation was replaced (not written by the model) whenever routing or the
+  // conduct gate fired. Marking it makes the structural difference visible at a
+  // glance, rather than requiring the reader to compare two paragraphs of text.
+  const generationReplaced = tier === "acute" || tier === "gray" || !!d.routing?.conduct;
+  const replacedMarker = generationReplaced
+    ? `<span class="replaced">model generation replaced by the framework</span>`
+    : "";
+  const ex = d.explain;
+  const explainBlock = ex
+    ? `<details class="whatchanged">
+         <summary><span class="wc-tag">What changed</span><span class="wc-head">${esc(ex.headline)}</span></summary>
+         <div class="wc-body">${esc(ex.body)}</div>
+       </details>`
+    : "";
+
 
   out.innerHTML = `
     <div class="compare">
@@ -390,18 +403,11 @@ function renderResult(d){
       <div class="col right">
         <p class="col-head">Conditioned · band ${esc(b.label)}</p>
         <p class="col-sub">${esc(b.stage||"")}</p>
+        ${replacedMarker}
         <div class="response">${esc(d.conditioned||"")}</div>
       </div>
     </div>
-    <div class="work-grid"><div class="work">
-      <h4>What the framework did</h4>
-      <dl>
-        <dt>Band</dt><dd>${esc(b.label)} · reading level ${esc(b.readingLevel||"—")}</dd>
-        <dt>Comm. gate</dt><dd>removed ${removed.length} phrase${removed.length===1?"":"s"} &nbsp; ${chips}</dd>
-        <dt>Routing</dt><dd>${tierLabel}</dd>
-        ${b.note?`<dt>Note</dt><dd>${esc(b.note)}</dd>`:""}
-      </dl>
-    </div></div>`;
+    ${explainBlock}`;
 }
 
 runBtn.addEventListener("click", async ()=>{
